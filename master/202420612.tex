@@ -1,0 +1,292 @@
+%%
+% このファイルは筑波大学情報学群情報科学類の卒業研究論文のサンプルです。
+% このファイルを書き換えて、このサンプルと同様の書式の論文をLaTeXを使って
+% 作成できます。
+% 
+% OSやLaTeXの設定によっては漢字コードや改行コードを変更する必要があります。
+%%
+\documentclass[a4paper,11pt]{jreport}
+
+%%【PDF, PostScript, JPEG, PNG等の画像の貼り込み】
+%% dvipdfmx を使う場合
+\usepackage[dvipdfmx]{graphicx}
+%% dvipdfmx を使ってPDFの「しおり」を付ける場合
+%%\usepackage[dvipdfmx,bookmarks=true,bookmarksnumbered=true,bookmarkstype=toc]{hyperref} \usepackage{pxjahyper}
+\usepackage{ulem}
+\usepackage{times} % use Times font instead of default one
+
+\setcounter{tocdepth}{3}
+\setcounter{page}{-1}
+
+\setlength{\oddsidemargin}{0.1in}
+\setlength{\evensidemargin}{0.1in} 
+\setlength{\topmargin}{0in}
+\setlength{\textwidth}{6in} 
+%\setlength{\textheight}{10.1in}
+\setlength{\parskip}{0em}
+\setlength{\topsep}{0em}
+
+%% タイトル生成用パッケージ（重要）
+\usepackage{coins-jp}
+
+%% タイトル
+\title{商品名とカテゴリ名情報の統合による\\
+データ拡張手法と商品名抽出器への応用}
+%% 著者
+\author{佐多 亮明}
+%% 指導教員
+\advisor{山本 幹雄, 乾 孝司, 津川 翔}
+
+%% 年度と主専攻名
+\fiscalyear{2024}
+%\majorfield{ソフトウェアサイエンス主専攻}
+% \majorfield{情報システム主専攻}
+\majorfield{知能情報メディア主専攻}
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+\newpage
+
+\thispagestyle{empty}
+\vspace*{20pt plus 1fil}
+\parindent=1zw
+\noindent
+%%
+%% 論文の要旨
+%%
+\begin{center}
+{\Large \bf 要　　旨}
+\vspace{2cm}
+\end{center}
+
+
+%%%%%
+\par
+\vspace{0pt plus 1fil}
+\newpage
+
+\pagenumbering{roman} % I, II, III, IV 
+\tableofcontents
+\listoffigures
+%\listoftables
+
+\pagebreak \setcounter{page}{1}
+\pagenumbering{arabic} % 1,2,3
+
+
+
+
+
+
+
+
+
+
+\chapter{序論}
+
+
+
+
+
+
+
+
+\chapter{関連研究}
+
+\section{ニューラルネットによる自然言語処理}
+
+\subsection{BERT}
+
+
+\subsection{固有表現抽出}
+
+
+\newpage
+\section{商品名抽出}
+
+
+
+\chapter{提案手法: カテゴリ名情報を利用したデータ拡張およびデータへの前処理}
+
+\section{データ拡張}
+
+
+\section{データ選択とデータ修正}
+
+\section{先行研究との違い}
+
+
+
+
+
+\chapter{実験}
+
+\section{目的}
+
+
+\section{実験設定}
+
+\subsection{対象ドメイン}
+
+
+\subsection{商品名辞書の作成}
+
+
+\subsection{データセット}
+
+
+\subsection{モデル}
+
+
+\subsection{評価指標}
+
+\section{実験結果}
+
+\subsection{1980〜2011年のゲームタイトル名辞書を用いた教師データによる実験}
+
+
+\subsection{2007〜2011年のゲームタイトル名辞書を用いた教師データによる実験}
+
+\subsection{2011年のゲームタイトル名辞書を用いた教師データによる実験}
+
+
+
+\section{考察}
+
+\subsection{商品名辞書の前処理}
+
+
+\subsection{カテゴリ教師データによるデータ拡張}
+
+
+
+\chapter{結論}
+\section{まとめ}
+
+\section{今後の課題}
+
+
+
+
+
+
+
+
+\chapter*{謝辞}
+\addcontentsline{toc}{chapter}{\numberline{}謝辞}
+本研究を進めるにあたり、指導教員である筑波大学システム情報系情報工学域山本幹雄教授、
+筑波大学システム情報系情報工学域乾孝司准教授、
+筑波大学システム情報系情報工学域津川翔准教授からは非常に多くの助言を頂きました。
+心より感謝申し上げます。
+特に、常日頃から研究活動や論文執筆において大変多くのご指導を頂きました山本幹雄教授に深く感謝申し上げます。
+また、論文を書き上げるにあたってさまざまサポートをしていただいた研究室の皆様に感謝申し上げます。
+
+
+
+
+
+
+
+
+
+
+\newpage
+\addcontentsline{toc}{chapter}{\numberline{}参考文献}
+\renewcommand{\bibname}{参考文献}
+
+%% 参考文献を直接ファイルに含めて書く場合
+\begin{thebibliography}{5000}
+\bibitem{Transformers}
+Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez, Lukasz Kaiser, Illia Polosukhin.
+\newblock Attention Is All You Need.
+\newblock  In Proceedings of the 31st Conference on Neural Information Processing Systems (NIPS), 2017.
+
+\bibitem{BERT}
+Jacob Devlin, Ming-Wei Chang, Kenton Lee, Kristina Toutanova.
+\newblock BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding.
+\newblock arXiv preprint arXiv:1810.04805, 2018.
+
+\bibitem{SVM}
+V.N. Vapnik. 
+\newblock Statistical Learning Theory. 
+\newblock A Wiley-Interscience Publication, 1998.
+
+\bibitem{SentencePiece}
+Taku Kudo, John Richardson
+\newblock SentencePiece: A simple and language independent subword tokenizer and detokenizer for Neural Text Processing.
+\newblock arXiv preprint arXiv:1808.06226, 2018.
+
+\bibitem{固有表現抽出SVM}
+山田寛康, 工藤拓, 松本裕治.
+\newblock Support Vector Machine を用いた日本語固有表現抽出. 
+\newblock 情報処理学会論文誌, Vol. 43, No. 1, pp. 44–53, 2002.
+
+\bibitem{BIO}
+黒橋禎夫. 
+\newblock 改訂版 自然言語処理. 
+\newblock 一般財団法人 放送大学教育振興会, 2019. 
+
+\bibitem{カテゴリ情報}
+渡邊尚吾, 乾孝司, 山本幹雄. 
+\newblock カテゴリ情報を利用したblog記事からの商品名自動抽出.
+\newblock 言語処理学会第19回年次大会発表論文集, 2013.
+
+\bibitem{jpgames}
+jpgames.
+\newblock 不完全ゲームデータベース.
+\newblock "http://jpgames.g1.xrea.com/", 閲覧日: 2023/12/8.
+
+\bibitem{価格ドットコム}
+価格ドットコム.
+\newblock "https://kakaku.com/", 閲覧日: 2023/12/8.
+
+\bibitem{twitter}
+Twitter. X.
+\newblock "https://twitter.com/"
+
+\bibitem{huggingface}
+Hugging Face.
+\newblock "https://huggingface.co/"
+
+\bibitem{東北大}
+東北大が公開した日本語事前学習済みBERTモデル.
+\newblock "https://huggingface.co/cl-tohoku/bert-base-japanese-v3"
+
+\bibitem{doccano}
+doccano日本語README.
+\newblock "https://github.com/doccano/doccano/wiki/doccano日本語README"
+
+\bibitem{ニコニコ}
+ニコニコ大百科.
+\newblock ゲームジャンルの一覧.
+\newblock "https://dic.nicovideo.jp/a/ゲームジャンルの一覧", 閲覧日: 2023/12/8.
+
+\end{thebibliography}
+
+
+
+
+
+
+
+
+
+
+\chapter*{付録A　スマートフォンドメインでの実験結果}
+\addcontentsline{toc}{chapter}{\numberline{}付録A　スマートフォンドメインでの実験結果}
+
+
+
+
+
+
+
+
+
+\chapter*{付録B　実験で用いたゲームカテゴリ名}
+\addcontentsline{toc}{chapter}{\numberline{}付録B　実験で用いたゲームカテゴリ名}
+
+
+
+\end{document}

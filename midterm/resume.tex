@@ -1,0 +1,162 @@
+\documentclass[twocolumn]{jsarticle}
+
+\usepackage{amsmath,amsfonts}
+\usepackage{bm}
+\usepackage[dvipdfmx]{graphicx}
+\usepackage[dvipdfmx]{hyperref}
+\hypersetup{
+ setpagesize=false,
+ bookmarksnumbered=true,
+ bookmarksopen=true,
+ colorlinks=true,
+ linkcolor=blue,
+ citecolor=red
+}
+\usepackage{url}
+\usepackage{ascmac}
+\usepackage{caption}
+
+
+\renewcommand{\thefigure}{\arabic{figure}}
+\begin{document}
+
+
+\title{\vspace{-3cm}信頼性の高いドキュメントを用いた\\
+大規模言語モデルによる指示データ生成手法の提案}
+\author{
+    システム情報工学研究群 情報理工学位プログラム\\
+    前期博士課程2年 202420612 佐多 亮明\\
+    指導教員: 山本 幹雄
+}
+\date{2025年7月5日}
+\maketitle
+
+
+\section{背景}
+近年、大規模言語モデル（LLM）の進化は、自然言語処理の幅広いタスクにおいて著しい成果を上げている。
+これらのモデルは、事前学習後に指示チューニング（Instruction Tuning）\cite{Instruction-Tuning}を行うことで、多様なタスクに柔軟に対応する能力を獲得する。
+指示チューニングでは、タスクの指示文（Instruction）に加えて、入力（Input）と対応する出力（Output）を含むデータセットが利用される。
+このデータセットの質と量は、モデルの性能向上に直結するため、極めて重要である。
+\begin{figure}[htbp]
+    \centering 
+    \includegraphics[width=\linewidth]{fig/instruction_data.png}
+    \caption{指示データの例(\cite{Self-Instruct}より引用)}
+\end{figure}
+ただし、指示データの作成は通常、人間の手によるラベル付け・文章作成を必要とする。
+そのため、大規模なデータセットを作成する場合は人件費や時間の負担が膨大になり、コストが大きな障壁となる。
+また、多様性に富んだタスクを人間に考案させることも容易ではないため、データセットの品質を確保することも難しい。
+
+このような課題を解決するために、Self-Instruct\cite{Self-Instruct}という自動生成パイプラインが提案されている。
+この手法では、ChatGPTのような大規模かつ高性能なLLMを用いて指示データを生成する。
+生成されたデータを用いてLLMが学習することで、データ作成の自動化と効率化を実現している。
+Alpacaモデル\cite{Alpaca}では、GPT-3.5を教師モデル、Llama-8Bモデル\cite{Llama}を生徒モデルとして、Self-Instructを知識蒸留のパイプラインに使用している。
+その結果、教師モデルが生成したデータを用いた指示チューニングは、生徒モデルの性能を向上させることが報告されている。
+
+しかし、LLMが生成するデータには事実に基づかない情報、いわゆる幻覚（ハルシネーション）が含まれる可能性がある。
+この問題は特に、信頼性が重視されるタスクにおいて深刻である。
+Self-Instructには幻覚を防止する仕組みが存在せず、そのため生成データの品質が担保されていない可能性がある。
+幻覚というノイズが含まれたデータで追加学習を行うことは、モデルの性能を低下させる要因の一つとなる。
+
+これらの課題に対処するため、本研究では信頼性の高いドキュメント（例としてWikipediaやGitHubリポジトリなど）を活用した新しい指示データ生成手法を提案する。
+この手法を用いることで、生成されるデータの正確性と信頼性を確保しつつ、生成プロセス全体の効率化を図ることを目指している。
+
+
+
+
+\section{関連研究}
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=\linewidth]{fig/self-instruct_overall.png}
+    \caption{Self-Instructの全体像(\cite{Self-Instruct}より引用)}
+    \label{fig:self-instruct_overall}
+\end{figure*}
+
+\subsection{指示チューニング}
+指示チューニング\cite{Instruction-Tuning}とは、大規模言語モデル（LLM）の事前学習済みモデルを、指示（instruction）に基づいて微調整する手法である。
+この方法は、言語モデルが自然言語で記述されたタスクの指示を理解し、応答できる能力を向上させることを目的としている。
+現在、指示チューニング用データセットは多岐に渡り、LLMに人間の趣向を理解させるための重要な役割を果たしている。
+
+指示チューニングのプロセスでは、さまざまな自然言語処理タスク（要約・翻訳など）を指示テンプレートとして表現し、それらを組み合わせたデータセットを用いてモデルを微調整する。
+この手法の特徴は、タスクを自然言語指示として統一することで、モデルが新たな未見タスクに対してもゼロショットで高い性能を発揮できるようになる点にある。
+
+\subsection{Self-Instruct}
+Self-Instruct\cite{Self-Instruct}は、事前学習済み言語モデル（LLM）を用いて指示チューニングを行うためのフレームワークである。
+この手法の核心は、LLM自身が指示データを生成し、それを使ってさらにモデルを調整するブートストラップ型のアルゴリズムにある。
+
+プロセスは図\ref{fig:self-instruct_overall}に示すように、次のように進行する。
+まず、少数の人間が作成したシードタスクからスタートし、モデルに新しい指示や入力・出力例を生成させる。
+その後、類似性や品質に基づいてフィルタリングを行い、生成されたデータを新たなタスクプールに追加する。
+この繰り返しにより、最終的には多様で高品質な指示データセットを得る。
+
+Self-Instructは、従来の手法のように大規模な人間によるラベル付けに依存せず、ほぼ注釈なしで指示チューニングを実現する。
+このフレームワークをGPT-3に適用した結果、Super-NaturalInstructionsベンチマーク\cite{Super-NaturalInstructions}において、元のモデルと比較して33\%の性能向上を達成し、人間が生成したデータを利用したInstructGPT001\cite{InstructGPT}とほぼ同等の性能を示した。
+
+\subsection{Alpaca}
+Alpaca\cite{Alpaca}は、スタンフォード大学によって提案された指示追従型モデルであり、LLaMAモデル\cite{Llama}に基づいて開発された。
+この研究は、Self-Instruct手法を応用して指示データを生成し、それを用いてLLaMAモデルを指示チューニングすることで、多様なタスクへの適応性を向上させることを目的としている。
+
+Alpacaモデルの構築プロセスでは、ChatGPTを使用して52,000件以上の指示-応答ペアを生成した。
+このデータを用いた調整により、Alpacaは既存の指示追従型モデルに匹敵する性能を示した一方で、必要な計算コストは非常に低い。
+比較的低コストで高性能な指示追従型モデルの実現が可能であることを示し、Self-Instructの有効性を示す一例となっている。
+
+
+\section{提案手法}
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=15cm]{fig/generate_data.png}
+    \caption{提案手法を用いた生成例}
+    \label{fig:generate_data}
+\end{figure*}
+
+本研究では、Alpacaモデルと同様にSelf-Instructメソッドを知識蒸留のデータ生成パイプラインとして活用する。
+モデルはgoogleが公開しているgemmaシリーズ\cite{Gemma2}のLLMを使用し、パラメータサイズの異なる教師モデルと生徒モデルを用意する。
+また、背景で指摘した幻覚の問題を解決するため、新たな指示データ生成手法を提案する。
+
+従来の一般的な幻覚除去のアプローチは、データを作成した後にハルシネーションを検出する方法である。
+この手法では、LLMに生成させた合成指示データを情報検索（RAG）や人手による検証を通じて確認する。
+しかし、この事後処理には高いコストがかかり、LLMに無駄なデータを生成させている点で効率が悪い。
+さらに、信頼性の高い検証を行うこと自体が困難である。
+
+これに対し、本研究では、幻覚を含まないデータを生成させるアプローチを採用する。
+具体的には図\ref{fig:generate_data}にあるように、Few-Shot学習として指示タスク例を与えるSelf-Instruct的な方法に加え、信頼性のあるドキュメント群（例：WikipediaやオープンソースのGitHubリポジトリ）をプロンプトに追加して指示データを生成する。
+この方法により、データの正確性と信頼性を向上させることを目指す。
+このアプローチは、近年公開されているLLMが示す「指示追従能力の向上」と「長文の文脈把握能力」によって実現可能となった。
+
+ただし、この手法には、タスク例とドキュメントのトピックを一致させる必要があるという制約がある。
+例えば、Pythonコードの補完問題に対しては公式ドキュメントやGitHubリポジトリを、数学の問題に対しては数学の教科書や問題集を使用することが求められる。
+一方で、タスク例とドキュメントのトピックが一致しない場合、生成されたタスク例が全く意味をなさないものになる可能性がある。
+この問題に対処するため、指示データをクラスタリングし、各ドキュメントに合致したクラスタに属するタスク例を選択する処理を追加する（図\ref{fig:method_2}を参照）。
+この処理により、タスク例とドキュメントのトピックの一致を保証し、データの品質向上が期待できる。
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=14cm]{fig/method_2.png}
+    \caption{データのクラスタリング}
+    \label{fig:method_2}
+\end{figure*}
+
+
+\section{今後の展望}
+現在、上記の提案手法に基づくフレームワークの実装を進めている。
+しかし、幻覚抑制アプローチのみでLLMの性能が向上するかについては依然として不明であり、実験を通じてその有効性を検証する計画である。
+実験の結果に応じて、新たな手法を組み込む可能性も検討しているが、ドキュメントを活用したデータ生成という基本方針は維持する予定である。
+
+
+\begin{thebibliography}{99}
+    \bibitem{Instruction-Tuning}
+    Jason Wei, Maarten Bosma, Vincent Y. Zhao, Kelvin Guu, Adams Wei Yu, Brian Lester, Nan Du, Andrew M. Dai, Quoc V. Le. Finetuned Language Models Are Zero-Shot Learners. arXiv:2109.01652. 2021.
+    \bibitem{Self-Instruct}
+    Yizhong Wang, Yeganeh Kordi, Swaroop Mishra, Alisa Liu, Noah A. Smith, Daniel Khashabi, Hannaneh Hajishirzi. Self-Instruct: Aligning Language Models with Self-Generated Instructions. arXiv:2212.10560. 2022.
+    \bibitem{Alpaca}
+    Rohan Taori and Ishaan Gulrajani and Tianyi Zhang and Yann Dubois and Xuechen Li and Carlos Guestrin and Percy Liang and Tatsunori B. Hashimoto. Alpaca: A Strong, Replicable Instruction-Following Model. https://crfm.stanford.edu/2023/03/13/alpaca.html. 2023.
+    \bibitem{Llama}
+    Hugo Touvron, Thibaut Lavril, Gautier Izacard, Xavier Martinet, Marie-Anne Lachaux, Timothée Lacroix, Baptiste Rozière, Naman Goyal, Eric Hambro, Faisal Azhar, Aurelien Rodriguez, Armand Joulin, Edouard Grave, Guillaume Lample. LLaMA: Open and Efficient Foundation Language Models. arXiv:2302.13971. 2023.
+    \bibitem{Gemma2}
+    Gemma Team: Gemma Team: Morgane Riviere et al. Gemma 2: Improving Open Language Models at a Practical Size. arXiv:2403.08295. 2024.
+    \bibitem{Super-NaturalInstructions}
+    Yizhong Wang et al. Super-NaturalInstructions: Generalization via Declarative Instructions on 1600+ NLP Tasks. arXiv:2204.07705. 2022.
+    \bibitem{InstructGPT}
+    Long Ouyang et al. Training language models to follow instructions with human feedback. arXiv:2203.02155. 2022.
+\end{thebibliography}
+
+
+\end{document}
