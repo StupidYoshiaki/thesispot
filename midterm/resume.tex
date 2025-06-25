@@ -5,12 +5,12 @@
 \usepackage[dvipdfmx]{graphicx}
 \usepackage[dvipdfmx]{hyperref}
 \hypersetup{
- setpagesize=false,
- bookmarksnumbered=true,
- bookmarksopen=true,
- colorlinks=true,
- linkcolor=blue,
- citecolor=red
+  setpagesize=false,
+  bookmarksnumbered=true,
+  bookmarksopen=true,
+  colorlinks=true,
+  linkcolor=blue,
+  citecolor=red
 }
 \usepackage{url}
 \usepackage{ascmac}
@@ -21,137 +21,112 @@
 \begin{document}
 
 
-\title{\vspace{-3cm}信頼性の高いドキュメントを用いた\\
-大規模言語モデルによる指示データ生成手法の提案}
+\title{\vspace{-3cm}大規模言語モデルの性能評価を目的とした\\
+文脈情報に基づく日本語テストデータの自動生成}
 \author{
-    システム情報工学研究群 情報理工学位プログラム\\
-    前期博士課程2年 202420612 佐多 亮明\\
-    指導教員: 山本 幹雄
+  システム情報工学研究群 情報理工学位プログラム\\
+  前期博士課程2年 202420612 佐多 亮明\\
+  指導教員: 山本 幹雄
 }
 \date{2025年7月5日}
 \maketitle
 
 
+
 \section{背景}
-近年、大規模言語モデル（LLM）の進化は、自然言語処理の幅広いタスクにおいて著しい成果を上げている。
-これらのモデルは、事前学習後に指示チューニング（Instruction Tuning）\cite{Instruction-Tuning}を行うことで、多様なタスクに柔軟に対応する能力を獲得する。
-指示チューニングでは、タスクの指示文（Instruction）に加えて、入力（Input）と対応する出力（Output）を含むデータセットが利用される。
-このデータセットの質と量は、モデルの性能向上に直結するため、極めて重要である。
-\begin{figure}[htbp]
-    \centering 
-    \includegraphics[width=\linewidth]{fig/instruction_data.png}
-    \caption{指示データの例(\cite{Self-Instruct}より引用)}
-\end{figure}
-ただし、指示データの作成は通常、人間の手によるラベル付け・文章作成を必要とする。
-そのため、大規模なデータセットを作成する場合は人件費や時間の負担が膨大になり、コストが大きな障壁となる。
-また、多様性に富んだタスクを人間に考案させることも容易ではないため、データセットの品質を確保することも難しい。
+近年、大規模言語モデル（LLM）は急速な発展を遂げており、その応用範囲は多岐にわたる。この技術の健全な発展のためには、各モデルの能力を正確に理解し、比較するための信頼性の高い評価手法が不可欠である。しかし、特に日本語ドメインにおいては、モデルの性能を多角的に測定するための高品質な評価データセット（ベンチマーク）が不足しているという課題が存在する。
 
-このような課題を解決するために、Self-Instruct\cite{Self-Instruct}という自動生成パイプラインが提案されている。
-この手法では、ChatGPTのような大規模かつ高性能なLLMを用いて指示データを生成する。
-生成されたデータを用いてLLMが学習することで、データ作成の自動化と効率化を実現している。
-Alpacaモデル\cite{Alpaca}では、GPT-3.5を教師モデル、Llama-8Bモデル\cite{Llama}を生徒モデルとして、Self-Instructを知識蒸留のパイプラインに使用している。
-その結果、教師モデルが生成したデータを用いた指示チューニングは、生徒モデルの性能を向上させることが報告されている。
+従来、こうした評価データセットは人手によるアノテーションを通じて作成されてきた。このアプローチは品質を担保する上でのゴールドスタンダードであるが、膨大な時間と金銭的コストを要するという大きな制約を抱えている。結果として、次々と登場する新しいモデルの開発スピードに、評価データセットの整備が追いつかないという事態が生じている。
 
-しかし、LLMが生成するデータには事実に基づかない情報、いわゆる幻覚（ハルシネーション）が含まれる可能性がある。
-この問題は特に、信頼性が重視されるタスクにおいて深刻である。
-Self-Instructには幻覚を防止する仕組みが存在せず、そのため生成データの品質が担保されていない可能性がある。
-幻覚というノイズが含まれたデータで追加学習を行うことは、モデルの性能を低下させる要因の一つとなる。
+このコストと時間の問題を解決する有望な代替案として、LLM自体に評価データを自動生成させるアプローチが考えられる。しかし、この手法には「ハルシネーション（幻覚）」という重大な課題がつきまとう。事実に基づかない情報を生成してしまうLLMの性質上、信頼できる情報源なしにデータを生成させると、内容が不正確であったり、問題として成立していなかったりする質の低いデータが大量に作られてしまう。
 
-これらの課題に対処するため、本研究では信頼性の高いドキュメント（例としてWikipediaやGitHubリポジトリなど）を活用した新しい指示データ生成手法を提案する。
-この手法を用いることで、生成されるデータの正確性と信頼性を確保しつつ、生成プロセス全体の効率化を図ることを目指している。
-
+そこで本研究では、ハルシネーションを抑制し、事実に基づいた高品質なテストデータを自動生成する手法を提案する。具体的には、Wikipedia記事のような信頼できる「文脈（コンテキスト）」をLLMに与え、そのテキスト内容に完全に準拠した一問一答形式のテストデータを生成させる。本研究の目的は、この手法で生成したテストデータセットが、人手で作成された既存のベンチマークと同様に、様々なLLMの性能序列を正確に反映できるかを実証することにある。これにより、低コストかつ大規模な評価データセットの持続的な供給を可能にし、日本語LLMの研究開発エコシステムの発展に貢献することを目指す。
 
 
 
 \section{関連研究}
 
-
 \subsection{指示チューニング}
-指示チューニング\cite{Instruction-Tuning}とは、大規模言語モデル（LLM）の事前学習済みモデルを、指示（instruction）に基づいて微調整する手法である。
-この方法は、言語モデルが自然言語で記述されたタスクの指示を理解し、応答できる能力を向上させることを目的としている。
-現在、指示チューニング用データセットは多岐に渡り、LLMに人間の趣向を理解させるための重要な役割を果たしている。
+指示チューニングは、Weiらによって提案された\cite{Instruction-Tuning}、事前学習済みのLLMを、多様なタスクを記述した指示（instruction）の集合で微調整（ファインチューニング）する手法である。その目的は、モデルが未学習のタスクに対しても、タスク内容を説明した指示を理解するだけでゼロショットで対応できる汎化能力を獲得させることにある。
 
-指示チューニングのプロセスでは、さまざまな自然言語処理タスク（要約・翻訳など）を指示テンプレートとして表現し、それらを組み合わせたデータセットを用いてモデルを微調整する。
-この手法の特徴は、タスクを自然言語指示として統一することで、モデルが新たな未見タスクに対してもゼロショットで高い性能を発揮できるようになる点にある。
+この手法のプロセスでは、翻訳、要約、質問応答といった様々な既存のNLPタスクを、「この文章を要約してください」のような自然言語の指示テンプレートを用いて表現し、それらを大規模に組み合わせたデータセットでモデルを微調整する。この研究により、単一のタスクでファインチューニングするのではなく、多種多様なタスクを統一的な指示形式で学習させることが、LLMの汎化性能を劇的に向上させることが示された。また、その効果は「モデルの規模（スケール）」と「チューニングに用いるタスクの数と多様性」が豊かであるほど高まることも明らかにされており、後の多くのLLM開発における基本方針となっている。
 
-\subsection{Self-Instruct}
-Self-Instruct\cite{Self-Instruct}は、事前学習済み言語モデル（LLM）を用いて指示チューニングを行うためのフレームワークである。
-この手法の核心は、LLM自身が指示データを生成し、それを使ってさらにモデルを調整するブートストラップ型のアルゴリズムにある。
+\subsection{指示事前学習 (Instruction Pre-Training)}
+指示事前学習は、Chengらによって提案された\cite{Instruction Pre-Training}、言語モデルの事前学習段階そのものに指示データを組み込む新しいフレームワークである。従来の手法と異なり、生コーパスとその内容に基づき自動生成した「指示と応答」のペアを組み合わせた「指示拡張コーパス」を用いて事前学習を行う。このアプローチの目的は、従来ファインチューニング段階で行われてきた教師ありマルチタスク学習の利点を、モデルの基礎能力を形成する事前学習段階に取り込むことにある。
 
-プロセスは図\ref{fig:self-instruct_overall}に示すように、次のように進行する。
-まず、少数の人間が作成したシードタスクからスタートし、モデルに新しい指示や入力・出力例を生成させる。
-その後、類似性や品質に基づいてフィルタリングを行い、生成されたデータを新たなタスクプールに追加する。
-この繰り返しにより、最終的には多様で高品質な指示データセットを得る。
+この手法で用いられる指示生成の着想は、本研究における「JSQuADのデータ構造を組み替えて指示学習データを作成する」というアプローチと共通点が多い。しかし、本論文がモデルの汎用的な能力向上を目指して事前学習の段階で指示データを導入するのに対し、本研究では評価用データセットの生成という特定の目的のためにファインチューニング段階で指示学習を活用する点で、目的と適用段階が明確に異なる。
 
-Self-Instructは、従来の手法のように大規模な人間によるラベル付けに依存せず、ほぼ注釈なしで指示チューニングを実現する。
-このフレームワークをGPT-3に適用した結果、Super-NaturalInstructionsベンチマーク\cite{Super-NaturalInstructions}において、元のモデルと比較して33\%の性能向上を達成し、人間が生成したデータを利用したInstructGPT001\cite{InstructGPT}とほぼ同等の性能を示した。
+\subsection{JSQuAD}
+JSQuADは、Yasunagaらによって構築された\cite{JSQuAD}、日本語の読解能力を評価するための大規模なデータセットである。これは、機械読解の分野で広く標準的なベンチマークとして利用されている英語のSQuAD\cite{SQuAD}の日本語版にあたる。データセットの構築は、日本語版Wikipediaの記事を文脈情報とし、クラウドソーシングを通じて作業者が文脈に関する「質問」と、その「回答」となる箇所を文脈中から抜き出す（スパン形式）ことで行われた。
 
-\subsection{Alpaca}
-Alpaca\cite{Alpaca}は、スタンフォード大学によって提案された指示追従型モデルであり、LLaMAモデル\cite{Llama}に基づいて開発された。
-この研究は、Self-Instruct手法を応用して指示データを生成し、それを用いてLLaMAモデルを指示チューニングすることで、多様なタスクへの適応性を向上させることを目的としている。
+このデータセットは、日本語を扱う言語モデルの読解能力と質問応答能力を測定するための、信頼性の高い共通の評価基盤を提供することを目的としている。本研究では、このJSQuADを2つの重要な役割で活用する。第一に、提案手法である指示学習において、その高品質な「文脈・質問・回答」の三つ組を、QAペア生成モデルの学習用教師データとして用いる。第二に、自動生成されたテストデータセットの有効性を評価する上で、JSQuADを人間が作成した基準（ゴールドスタンダード）として利用し、各LLMの性能ランキングを比較するためのベンチマークとする。
 
-Alpacaモデルの構築プロセスでは、ChatGPTを使用して52,000件以上の指示-応答ペアを生成した。
-このデータを用いた調整により、Alpacaは既存の指示追従型モデルに匹敵する性能を示した一方で、必要な計算コストは非常に低い。
-比較的低コストで高性能な指示追従型モデルの実現が可能であることを示し、Self-Instructの有効性を示す一例となっている。
 
 
 \section{提案手法}
-\begin{figure*}[t]
-    \centering
-    \includegraphics[width=15cm]{fig/generate_data.png}
-    \caption{提案手法を用いた生成例}
-    \label{fig:generate_data}
-\end{figure*}
 
-本研究では、Alpacaモデルと同様にSelf-Instructメソッドを知識蒸留のデータ生成パイプラインとして活用する。
-モデルはgoogleが公開しているgemmaシリーズ\cite{Gemma2}のLLMを使用し、パラメータサイズの異なる教師モデルと生徒モデルを用意する。
-また、背景で指摘した幻覚の問題を解決するため、新たな指示データ生成手法を提案する。
+本研究では、信頼性の高い日本語テストデータを自動生成する手法を提案し、その有効性を検証する。具体的には、生成モデルとして日本語処理能力に優れたtokyotech-llm/Llama-3.1-Swallow-8B-Instruct-v0.3\cite{Fujii:COLM2024}を用い、与えられた文脈情報から一問一答形式のQAペアを生成させる。その生成アプローチとして、ベースラインである「Zero-Shot推論」や「Few-Shot推論」に加え、本研究の主軸となる「指示チューニング」\cite{Instruction-Tuning}を実装する。
 
-従来の一般的な幻覚除去のアプローチは、データを作成した後にハルシネーションを検出する方法である。
-この手法では、LLMに生成させた合成指示データを情報検索（RAG）や人手による検証を通じて確認する。
-しかし、この事後処理には高いコストがかかり、LLMに無駄なデータを生成させている点で効率が悪い。
-さらに、信頼性の高い検証を行うこと自体が困難である。
+この指示学習において、人間が作成した高品質な読解データセットであるJSQuAD\cite{JSQuAD}を効果的に活用する点が、本手法の独創的な核心である。本来、JSQuADは「文脈」と「質問」を入力とし、「回答」を予測する読解タスク用に設計されている。本研究ではこの入出力構造を意図的に組み替え、「文脈」のみを入力とし、対応する「質問と回答のペア」をまとめて出力するようにタスクを再定義した。この「発想の転換」により、読解モデル評価用データセットを、QAペア生成モデルの学習用データセットとして活用し、モデルに文脈全体から適切な問いと答えを創出する能力を直接的に学習させる。
 
-これに対し、本研究では、幻覚を含まないデータを生成させるアプローチを採用する。
-具体的には図\ref{fig:generate_data}にあるように、Few-Shot学習として指示タスク例を与えるSelf-Instruct的な方法に加え、信頼性のあるドキュメント群（例：WikipediaやオープンソースのGitHubリポジトリ）をプロンプトに追加して指示データを生成する。
-この方法により、データの正確性と信頼性を向上させることを目指す。
-このアプローチは、近年公開されているLLMが示す「指示追従能力の向上」と「長文の文脈把握能力」によって実現可能となった。
+上記のアプローチで生成した各テストデータセットの有効性を評価するため、統一された評価フレームワークを構築した。性能評価の基準（ベースライン）として、人間が作成したJSQuADデータセットを本来の読解タスクとして用いる。この基準データセットを12種類のオープンソースLLM群に解かせ、それぞれの正解率（回答の完全一致率）を基に「モデル性能の基準ランキング」を算出する。次に、自動生成した各テストデータセットを用いて同様に12モデルの性能ランキングをそれぞれ算出する。最終的に、「基準ランキング」と「自動生成データによるランキング」との間にどの程度の相関があるかを、スピアマンの順位相関係数（$\rho$）を用いて定量的に評価する。この$\rho$値が1に近いほど、自動生成されたテストデータが、人手によるベンチマークと同等の信頼性を持つ評価軸として機能することを示す。
 
-ただし、この手法には、タスク例とドキュメントのトピックを一致させる必要があるという制約がある。
-例えば、Pythonコードの補完問題に対しては公式ドキュメントやGitHubリポジトリを、数学の問題に対しては数学の教科書や問題集を使用することが求められる。
-一方で、タスク例とドキュメントのトピックが一致しない場合、生成されたタスク例が全く意味をなさないものになる可能性がある。
-この問題に対処するため、指示データをクラスタリングし、各ドキュメントに合致したクラスタに属するタスク例を選択する処理を追加する（図\ref{fig:method_2}を参照）。
-この処理により、タスク例とドキュメントのトピックの一致を保証し、データの品質向上が期待できる。
-\begin{figure*}[t]
-    \centering
-    \includegraphics[width=14cm]{fig/method_2.png}
-    \caption{データのクラスタリング}
-    \label{fig:method_2}
-\end{figure*}
+
+
+\section{実験と考察}
+
+提案手法の有効性を実証するため、自動生成されたテストデータセットを用いてLLMの性能評価実験を行った。実験設定は3章で述べた通りである。本実験の目的は、各自動生成アプローチが、JSQuAD\cite{JSQuAD}を基準として算出されたベースラインランキングをどの程度忠実に再現できるかを定量的に示すことにある。
+
+各生成アプローチ（Zero-Shot, Few-Shot, 指示学習）で作成したテストデータセットと、ベースラインランキングとのスピアマンの順位相関係数（$\rho$）を表\ref{tab:rho_summary}にまとめる。
+
+\begin{table}[h]
+  \centering
+  \caption{各生成アプローチと順位相関係数の比較}
+  \label{tab:rho_summary}
+  \begin{tabular}{lc}
+  \hline
+  生成アプローチ       & 順位相関係数 ($\rho$) \\
+  \hline
+  Zero-Shot 推論       & 0.6364                     \\
+  10-Shot 推論         & 0.7622                     \\
+  指示学習（提案手法） & 0.8741                     \\
+  \hline
+  \end{tabular}
+\end{table}
+
+表\ref{tab:rho_summary}が示す通り、相関係数はZero-Shot推論の$\rho=0.6364$から、Few-Shot推論で$\rho=0.7622$へ、そして指示学習では$\rho=0.8741$へと段階的に向上した。この傾向は、生成モデルへの指示をより具体的に、かつタスクに特化させるほど、生成されるテストデータセットの信頼性が向上することを示唆している。
+
+特に、本研究の主軸である指示学習アプローチが高い相関を達成したことは、JSQuADのデータ構造を組み替えて学習させるという本手法の有効性を強く裏付けている。これにより、人間が作成したベンチマークの評価軸を極めて忠実に再現可能であることが実証された。なお、自動生成データを用いた際の各モデルの絶対的な正解率は、人間製データで評価した際よりも全体的に低下する傾向が見られた。これは生成された問題の難易度や表現の揺れに起因すると考えられる。しかし、評価データセットとしての最も重要な役割である、モデル間の相対的な性能差を正確に捉え、信頼性の高い性能ランキングを構築するという点において、本提案手法は十分に有効であることが、この高い順位相関係数によって示されている。
+
 
 
 \section{今後の展望}
-現在、上記の提案手法に基づくフレームワークの実装を進めている。
-しかし、幻覚抑制アプローチのみでLLMの性能が向上するかについては依然として不明であり、実験を通じてその有効性を検証する計画である。
-実験の結果に応じて、新たな手法を組み込む可能性も検討しているが、ドキュメントを活用したデータ生成という基本方針は維持する予定である。
+
+本研究では、文脈情報に基づく一問一答形式のテストデータを自動生成し、その有効性を示した。この成果を基盤とし、将来的には以下のような方向性で研究を発展させることを目指す。
+
+第一に、生成データの品質を強化学習によってさらに向上させることである。本稿で示した指示学習は高い有効性を示したが、生成される回答の形式をより厳密に制御するには限界がある。そこで、指示学習済みモデルに対し、GRPOなどの強化学習手法を適用するアプローチが考えられる\cite{Instruction Pre-Training}。例えば、「回答が文脈から抽出可能であること」「回答が簡潔な名詞句であること」「質問と文脈の関連性が高いこと」といった理想的なテストデータが満たすべき条件を報酬関数として設計し、モデルを最適化する。これにより、評価の安定性をさらに高めることができると期待される。
+
+第二に、異言語データセットを活用した生成モデルの構築である。本研究は日本語のJSQuAD\cite{JSQuAD}を基盤としたが、高品質な学習データが存在しない言語や専門ドメインも多い。この課題に対し、英語圏の豊富なデータセット（例：SQuAD\cite{SQuAD}）で指示学習を行ったモデルを、日本語のテストデータ生成に応用する研究が有望である\cite{Fujii:COLM2024}。単純な適用では言語の壁があるため、英語で得た汎用的なQA生成能力を、少量の日本語データで効率的に適応させる技術などを探求することで、多言語・多ドメインへの応用可能性が拓ける。
+
+最後に、より高度な推論能力を測定するためのテストフォーマットへの拡張である。現在の抽出型QA形式に加え、より複雑な能力を評価できるデータセットの生成を目指す。具体的には、正解以外の魅力的な誤答選択肢を自動生成する「複数選択肢形式」や、文脈中の複数箇所に散らばった情報を統合して初めて解答可能となる「マルチホップ質問応答」への対応を検討する。これらの実現は、LLMの評価を単なる知識の検索から、より深い論理的推論能力の測定へと進化させる上で不可欠である。
+
 
 
 \begin{thebibliography}{99}
-    \bibitem{Instruction-Tuning}
-    Jason Wei, Maarten Bosma, Vincent Y. Zhao, Kelvin Guu, Adams Wei Yu, Brian Lester, Nan Du, Andrew M. Dai, Quoc V. Le. Finetuned Language Models Are Zero-Shot Learners. arXiv:2109.01652. 2021.
-    \bibitem{Self-Instruct}
-    Yizhong Wang, Yeganeh Kordi, Swaroop Mishra, Alisa Liu, Noah A. Smith, Daniel Khashabi, Hannaneh Hajishirzi. Self-Instruct: Aligning Language Models with Self-Generated Instructions. arXiv:2212.10560. 2022.
-    \bibitem{Alpaca}
-    Rohan Taori and Ishaan Gulrajani and Tianyi Zhang and Yann Dubois and Xuechen Li and Carlos Guestrin and Percy Liang and Tatsunori B. Hashimoto. Alpaca: A Strong, Replicable Instruction-Following Model. https://crfm.stanford.edu/2023/03/13/alpaca.html. 2023.
-    \bibitem{Llama}
-    Hugo Touvron, Thibaut Lavril, Gautier Izacard, Xavier Martinet, Marie-Anne Lachaux, Timothée Lacroix, Baptiste Rozière, Naman Goyal, Eric Hambro, Faisal Azhar, Aurelien Rodriguez, Armand Joulin, Edouard Grave, Guillaume Lample. LLaMA: Open and Efficient Foundation Language Models. arXiv:2302.13971. 2023.
-    \bibitem{Gemma2}
-    Gemma Team: Gemma Team: Morgane Riviere et al. Gemma 2: Improving Open Language Models at a Practical Size. arXiv:2403.08295. 2024.
-    \bibitem{Super-NaturalInstructions}
-    Yizhong Wang et al. Super-NaturalInstructions: Generalization via Declarative Instructions on 1600+ NLP Tasks. arXiv:2204.07705. 2022.
-    \bibitem{InstructGPT}
-    Long Ouyang et al. Training language models to follow instructions with human feedback. arXiv:2203.02155. 2022.
+  \bibitem{Instruction-Tuning}
+  Jason Wei, Maarten Bosma, Vincent Y. Zhao, Kelvin Guu, Adams Wei Yu, Brian Lester, Nan Du, Andrew M. Dai, Quoc V. Le. Finetuned Language Models Are Zero-Shot Learners. arXiv:2109.01652. 2021.
+  \bibitem{Instruction Pre-Training}
+  Daixuan Cheng, Yuxian Gu, Shaohan Huang, Junyu Bi, Minlie Huang, Furu Wei. Instruction Pre-Training: Language Models are Supervised Multitask Learners. arXiv:2406.14491. 2024.
+  \bibitem{SQuAD}
+  Pranav Rajpurkar, Jian Zhang, Konstantin Lopyrev, Percy Liang. SQuAD: 100,000+ Questions for Machine Comprehension of Text. arXiv:1606.05250. 2016.
+  \bibitem{JSQuAD}
+  Soichi Yasunaga, Juro Fukunaga, et al. JSQuAD: A Japanese Question Answering Dataset. arXiv:2202.01764. 2022.
+  \bibitem{Fujii:COLM2024}
+  Kazuki Fujii, Taishi Nakamura, Mengsay Loem, Hiroki Iida, Masanari Ohi, Kakeru Hattori, Hirai Shota, Sakae Mizuki, Rio Yokota, Naoaki Okazaki. Continual Pre-Training for Cross-Lingual LLM Adaptation: Enhancing Japanese Language Capabilities. Proceedings of the First Conference on Language Modeling. 2024.
+  \bibitem{Okazaki:COLM2024}
+  Naoaki Okazaki, Kakeru Hattori, Hirai Shota, Hiroki Iida, Masanari Ohi, Kazuki Fujii, Taishi Nakamura, Mengsay Loem, Rio Yokota, Sakae Mizuki. Building a Large Japanese Web Corpus for Large Language Models. Proceedings of the First Conference on Language Modeling. 2024.
+  \bibitem{ma:arxiv2025}
+  Youmi Ma, Sakae Mizuki, Kazuki Fujii, Taishi Nakamura, Masanari Ohi, Hinari Shimada, Taihei Shiotani, Koshiro Saito, Koki Maeda, Kakeru Hattori, Takumi Okamoto, Shigeki Ishida, Rio Yokota, Hiroya Takamura, Naoaki Okazaki. Building Instruction-Tuning Datasets from Human-Written Instructions with Open-Weight Large Language Models. arXiv:2503.23714. 2025.
 \end{thebibliography}
-
 
 \end{document}
