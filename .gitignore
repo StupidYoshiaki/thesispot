@@ -1,2 +1,6 @@
+# out ディレクトリ以下の pdf ファイルを以外を無視
 out/
-fig/
+ex/
+
+# Google Slides ファイル
+*.gslides
